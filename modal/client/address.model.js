@@ -1,4 +1,6 @@
 const db = require('../../config/database');
+const fs = require('fs');
+const axios = require('axios');
 
 exports.getAddresses = async (userId) => {
   const [rows] = await db.execute(
@@ -43,3 +45,51 @@ exports.setDefaultAddress = async (userId, addressId) => {
     [addressId, userId]
   );
 };
+
+
+
+// const GOOGLE_API_KEY = 'AIzaSyAf7gz1NJpDaldW0srTH2ElMK_0SxFfLS8';
+// const geocodeUrl = 'https://maps.googleapis.com/maps/api/geocode/json';
+
+// // Hàm để ghi dữ liệu vào file
+// const writeToFile = (data) => {
+//   fs.writeFile('../../aaaa.json', JSON.stringify(data, null, 2), (err) => {
+//     if (err) {
+//       console.error('Lỗi khi ghi file:', err);
+//     } else {
+//       console.log('Dữ liệu đã được ghi vào file geocode_results.json');
+//     }
+//   });
+// };
+
+// // Hàm geocode - chuyển địa chỉ thành tọa độ
+// const geocodeAddress = async (address) => {
+//   try {
+//     const response = await axios.get(geocodeUrl, {
+//       params: {
+//         address: address,
+//         key: GOOGLE_API_KEY,
+//       },
+//     });
+
+//     if (response.data.status === 'OK') {
+//       const location = response.data.results[0]?.geometry.location;
+//       console.log('Latitude:', location.lat);
+//       console.log('Longitude:', location.lng);
+
+//       // Ghi kết quả vào file
+//       writeToFile({
+//         address: address,
+//         latitude: location.lat,
+//         longitude: location.lng,
+//       });
+//     } else {
+//       console.log('Không tìm thấy kết quả cho địa chỉ:', address);
+//     }
+//   } catch (error) {
+//     console.error('Lỗi khi gọi Google Maps API:', error);
+//   }
+// };
+// module.exports={
+//   geocodeAddress
+// }

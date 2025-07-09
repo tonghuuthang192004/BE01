@@ -17,5 +17,6 @@ router.delete('/:id', authenticate, addressController.deleteAddress);
 
 // ✅ Đặt địa chỉ mặc định
 router.patch('/default/:id', authenticate, addressController.setDefaultAddress);
+// router.patch('/maps', addressController.setDefaultAddress);
 
 module.exports = router;

@@ -4,7 +4,7 @@ const db = require('../../config/database');
 // 🟢 Lấy tất cả sản phẩm
 const getAllProducts = async () => {
     const sql = `
-        SELECT id_san_pham, id_danh_muc, ten, gia, mo_ta, hinh_anh, noi_bat
+        SELECT id_san_pham, id_danh_muc, ten, gia, mo_ta, hinh_anh, noi_bat,so_luong_kho
         FROM san_pham
         WHERE deleted = 0 AND trang_thai = 1
     `;
@@ -16,7 +16,7 @@ const getAllProducts = async () => {
 const getHotProducts = async () => {
     const sql = `
         SELECT 
-            sp.id_san_pham, sp.id_danh_muc, sp.ten, sp.gia, sp.mo_ta, sp.hinh_anh,
+            sp.id_san_pham, sp.id_danh_muc, sp.ten, sp.gia, sp.mo_ta, sp.hinh_anh,so_luong_kho,
             IFNULL(AVG(dg.diem_so), 0) AS diem_so
         FROM san_pham sp
         LEFT JOIN danh_gia_san_pham dg 
@@ -34,7 +34,7 @@ const getHotProducts = async () => {
 const getProductById = async (id) => {
   const sql = `
     SELECT 
-      sp.id_san_pham, sp.ten, sp.gia, sp.mo_ta, sp.hinh_anh, sp.noi_bat,
+      sp.id_san_pham, sp.ten, sp.gia, sp.mo_ta, sp.hinh_anh, sp.noi_bat,so_luong_kho,
       IFNULL(AVG(dg.diem_so), 0) AS diem_so
     FROM san_pham sp
     LEFT JOIN danh_gia_san_pham dg 
@@ -51,7 +51,7 @@ const getProductById = async (id) => {
 // 🛍️ Lấy sản phẩm theo danh mục
 const getProductsByCategoryId = async (id_danh_muc) => {
     const sql = `
-        SELECT id_san_pham, ten, gia, mo_ta, hinh_anh, noi_bat
+        SELECT id_san_pham, ten, gia, mo_ta, hinh_anh, noi_bat,so_luong_kho
         FROM san_pham
         WHERE id_danh_muc = ? AND deleted = 0 AND trang_thai = 1
     `;

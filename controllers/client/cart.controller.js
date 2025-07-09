@@ -64,6 +64,7 @@ module.exports.addItemToCart = async (req, res) => {
     }
 
     if (stock[0].so_luong_kho < so_luong) {
+      
       return res.status(400).json({ success: false, message: "Sản phẩm không đủ số lượng trong kho" });
     }
 

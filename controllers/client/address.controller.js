@@ -80,3 +80,16 @@ exports.setDefaultAddress = async (req, res) => {
     res.status(500).json({ success: false, message: 'Lỗi server khi đặt mặc định' });
   }
 };
+
+
+module.exports.maps= async(req,res)=>{
+  
+  const { address } = req.body;
+  if (!address) {
+    return res.status(400).json({ success: false, message: 'Address is required!' });
+  }
+
+   await addressModel.geocodeAddress(address);
+  return res.status(200).json({ success: true, message: 'Processing geocode...' });
+
+}
