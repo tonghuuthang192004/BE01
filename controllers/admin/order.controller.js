@@ -176,6 +176,7 @@ orderData.gia_tri_giam = gia_tri_giam;
 orderData.tong_gia = tong_gia_truoc_giam - gia_tri_giam;
     // 1. Tạo đơn hàng trong hệ thống
     const {orderId,momo_order_id} = await orderModel.createOrder(orderData);
+console.log('Order created successfully with orderId:', orderId);  // Log orderId to check if it's returned correctly
 
     // 2. Nếu chọn thanh toán MoMo
     if (orderData.phuong_thuc_thanh_toan === 'momo') {
@@ -237,10 +238,9 @@ orderData.tong_gia = tong_gia_truoc_giam - gia_tri_giam;
     if (orderData.phuong_thuc_thanh_toan === 'cod') {
       return res.status(201).json({
         message: 'Đơn hàng được tạo thành công. Phương thức thanh toán COD đã được ghi nhận.',
-        orderId
+        orderId: orderId
       });
     }
-
     // 4. Phương thức không hợp lệ
     return res.status(400).json({ message: 'Phương thức thanh toán không hợp lệ.' });
 

@@ -4,6 +4,7 @@ const db = require('../../config/database');
 // 📦 Tạo đơn hàng mới (COD / MoMo)
 const createOrder = async (orderData) => {
   try {
+    // Bắt đầu giao dịch
     await db.query('START TRANSACTION');
 
     // 1. Insert đơn hàng (đã có giảm giá nếu có)
@@ -37,14 +38,22 @@ const createOrder = async (orderData) => {
     const [result] = await db.query(insertQuery, insertValues);
 
     const orderId = result.insertId;
-    const momo_order_id = `MOMO_${Date.now()}_${orderId}`;
 
-    // 2. Update momo_order_id
-    await db.query(
-      `UPDATE don_hang SET momo_order_id = ? WHERE id_don_hang = ?`,
-      [momo_order_id, orderId]
-    );
+    let momo_order_id = null;
+    
+    // Nếu phương thức thanh toán là MoMo, tạo momo_order_id
+    if (orderData.phuong_thuc_thanh_toan === 'momo') {
+      momo_order_id = `MOMO_${Date.now()}_${orderId}`;
+      // 2. Update momo_order_id vào đơn hàng
+      await db.query(
+        `UPDATE don_hang SET momo_order_id = ? WHERE id_don_hang = ?`,
+        [momo_order_id, orderId]
+      );
 
+
+    }
+
+    
     // 3. Insert chi tiết đơn hàng
     for (const item of orderData.chi_tiet_san_pham) {
       await db.query(
@@ -61,15 +70,22 @@ const createOrder = async (orderData) => {
       [orderId]
     );
 
+    // Cam kết giao dịch
     await db.query('COMMIT');
+
+    // Trả về thông tin đơn hàng và momo_order_id nếu có
+    //console.log(orderId);
+
     return { orderId, momo_order_id };
 
   } catch (err) {
+    // Nếu có lỗi, rollback giao dịch
     await db.query('ROLLBACK');
     console.error('❌ Lỗi tạo đơn hàng:', err.message);
     throw err;
   }
 };
+
 
 // 📥 Lấy danh sách đơn hàng theo user
 const getOrdersByUserId = async (userId, status) => {

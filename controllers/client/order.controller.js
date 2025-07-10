@@ -49,97 +49,118 @@ module.exports.getOrderDetailByUser = async (req, res) => {
   }
 };
 
-
-
-
 module.exports.createOrderAndPay = async (req, res) => {
   const orderData = req.body;
 
-  
-
-  
   try {
-      // =======================
+    // =======================
     // ✅ TÍNH TỔNG GIÁ + GIẢM
     // =======================
- let tong_gia_truoc_giam = 0;
+    let tong_gia_truoc_giam = 0;
+    let gia_tri_giam = 0; // Mặc định giảm giá là 0
 
-// for (const sp of orderData.chi_tiet_san_pham) {
-//   const [rows] = await db.execute(`SELECT gia FROM san_pham WHERE id_san_pham = ?`, [sp.id_san_pham]);
+    console.log('orderData:', orderData);
 
-//   if (rows.length === 0) {
-//     return res.status(400).json({ message: `Sản phẩm với ID ${sp.id_san_pham} không tồn tại.` });
-//   }
+    // Kiểm tra chi tiết sản phẩm trong giỏ hàng
+    for (const sp of orderData.chi_tiet_san_pham) {
+      // Tạo câu truy vấn SQL
+      const query = `SELECT gia FROM san_pham WHERE id_san_pham = ?`;
 
-//   const gia = rows[0].gia;
-//   sp.gia = gia; // gán lại để insert vào chi tiết đơn hàng
-//   tong_gia_truoc_giam += gia * sp.so_luong;
-// }
-let gia_tri_giam = 0;
+      // In câu truy vấn SQL và giá trị id_san_pham
+      console.log('Executing query:', query, 'with id_san_pham:', sp.id_san_pham);
 
-if (orderData.ma_giam_gia?.trim()) {
-  const ma = orderData.ma_giam_gia.trim();
+      const [rows] = await db.execute(query, [sp.id_san_pham]);
 
-  const [rows] = await db.execute(`
-    SELECT * FROM giam_gia 
-    WHERE ma_giam_gia = ? AND deleted = 0 AND trang_thai = 'active'
-  `, [ma]);
+      if (rows.length === 0) {
+        return res.status(400).json({ message: `Sản phẩm với ID ${sp.id_san_pham} không tồn tại.` });
+      }
 
-  const giamGia = rows[0];
-  if (!giamGia) return res.status(400).json({ message: 'Mã giảm giá không hợp lệ.' });
+      const gia = rows[0].gia;
+      sp.gia = gia; // Gán lại để insert vào chi tiết đơn hàng
+      tong_gia_truoc_giam += gia * sp.so_luong;
+    }
 
-  const now = moment();
+    // Kiểm tra nếu có mã giảm giá và áp dụng
+    if (orderData.ma_giam_gia?.trim()) {
+      const ma = orderData.ma_giam_gia.trim();
 
-  if (now.isBefore(giamGia.ngay_bat_dau) || now.isAfter(giamGia.ngay_ket_thuc)) {
-    return res.status(400).json({ message: 'Mã giảm giá đã hết hạn hoặc chưa bắt đầu.' });
-  }
+      const query = `
+        SELECT * FROM giam_gia 
+        WHERE ma_giam_gia = ? AND deleted = 0 AND trang_thai = 'active'
+      `;
+      console.log('Executing query:', query, 'with ma_giam_gia:', ma);
 
-  if (giamGia.so_luong_con_lai <= 0) {
-    return res.status(400).json({ message: 'Mã giảm giá đã hết lượt sử dụng.' });
-  }
+      const [rows] = await db.execute(query, [ma]);
 
-  if (tong_gia_truoc_giam < giamGia.dieu_kien) {
-    return res.status(400).json({ message: `Đơn hàng phải từ ${giamGia.dieu_kien}đ để dùng mã.` });
-  }
+      const giamGia = rows[0];
+      if (!giamGia) return res.status(400).json({ message: 'Mã giảm giá không hợp lệ.' });
 
-  // Tính giá trị giảm
-  if (giamGia.loai === 'phan_tram') {
-    gia_tri_giam = Math.floor(tong_gia_truoc_giam * giamGia.gia_tri / 100);
-  } else {
-    gia_tri_giam = giamGia.gia_tri;
-  }
+      const now = moment();
 
-  // Trừ lượt
-  await db.execute(`
-    UPDATE giam_gia 
-    SET so_luong_con_lai = so_luong_con_lai - 1 
-    WHERE id_giam_gia = ?
-  `, [giamGia.id_giam_gia]);
+      if (now.isBefore(giamGia.ngay_bat_dau) || now.isAfter(giamGia.ngay_ket_thuc)) {
+        return res.status(400).json({ message: 'Mã giảm giá đã hết hạn hoặc chưa bắt đầu.' });
+      }
 
-  // Gán id_giam_gia vào orderData để lưu đơn hàng
-  orderData.id_giam_gia = giamGia.id_giam_gia;
-}
+      if (giamGia.so_luong_con_lai <= 0) {
+        return res.status(400).json({ message: 'Mã giảm giá đã hết lượt sử dụng.' });
+      }
 
-// ✅ GÁN GIÁ TRỊ VÀO orderData
-orderData.tong_gia_truoc_giam = tong_gia_truoc_giam;
-orderData.gia_tri_giam = gia_tri_giam;
-orderData.tong_gia = tong_gia_truoc_giam - gia_tri_giam;
-    // 1. Tạo đơn hàng trong hệ thống
-    const {orderId,momo_order_id} = await orderModel.createOrder(orderData);
+      // Tính giá trị giảm
+      if (giamGia.loai === 'phan_tram') {
+        gia_tri_giam = Math.floor(tong_gia_truoc_giam * giamGia.gia_tri / 100);
+      } else {
+        gia_tri_giam = giamGia.gia_tri;
+      }
 
-    // 2. Nếu chọn thanh toán MoMo
+      // Trừ lượt sử dụng mã giảm giá
+      const updateQuery = `
+        UPDATE giam_gia 
+        SET so_luong_con_lai = so_luong_con_lai - 1 
+        WHERE id_giam_gia = ?
+      `;
+      console.log('Executing query:', updateQuery, 'with id_giam_gia:', giamGia.id_giam_gia);
+      await db.execute(updateQuery, [giamGia.id_giam_gia]);
+
+      // Gán id_giam_gia vào orderData để lưu đơn hàng
+      orderData.id_giam_gia = giamGia.id_giam_gia;
+    }
+
+    // ✅ GÁN GIÁ TRỊ VÀO orderData
+    orderData.tong_gia_truoc_giam = tong_gia_truoc_giam;
+    orderData.gia_tri_giam = gia_tri_giam;
+    orderData.tong_gia = tong_gia_truoc_giam - gia_tri_giam;
+
+    // ========================
+    // ✅ TẠO ĐƠN HÀNG
+    // ========================
+    const { orderId } = await orderModel.createOrder(orderData);
+    console.log('Order created with ID:', orderId);
+
+    let momo_order_id = null;
+
+    // ========================
+    // ✅ XỬ LÝ THANH TOÁN MOOMO
+    // ========================
     if (orderData.phuong_thuc_thanh_toan === 'momo') {
+      momo_order_id = `MOMO_${Date.now()}_${orderId}`;
+
+      // Cập nhật momo_order_id vào bảng đơn hàng
+      await db.query(
+        `UPDATE don_hang SET momo_order_id = ? WHERE id_don_hang = ?`,
+        [momo_order_id, orderId]
+      );
+
       const partnerCode = 'MOMO';
       const requestType = "payWithMethod";
       const amount = orderData.tong_gia.toString();
       const orderInfo = `Thanh toán đơn hàng #${orderId}`;
       const redirectUrl = 'https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b';
+      var ipnUrl = 'https://a075-2402-800-63ac-8971-7828-7380-b173-e3b2.ngrok-free.app/admin/cod/callback';
 
-  var ipnUrl = 'https://ee7c-113-185-64-1.ngrok-free.app/order/momo/callback';
-      // const momoOrderId = 'MOMO_' + Date.now(); // orderId gửi MoMo
       const requestId = 'REQ_' + Date.now();
-      const extraData = '';const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${momo_order_id}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+      const extraData = '';
 
+      const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${momo_order_id}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
       const signature = crypto.createHmac('sha256', secretKey).update(rawSignature).digest('hex');
 
       const requestBody = {
@@ -160,12 +181,13 @@ orderData.tong_gia = tong_gia_truoc_giam - gia_tri_giam;
         signature
       };
 
+      console.log('Sending request to MoMo:', requestBody);
+
       const momoRes = await axios.post('https://test-payment.momo.vn/v2/gateway/api/create', requestBody, {
         headers: { 'Content-Type': 'application/json' }
       });
 
       if (momoRes.data.resultCode !== 0) {
-        // Xoá đơn hàng nếu MoMo tạo thất bại
         await orderModel.deleteOrder(orderId);
         return res.status(400).json({
           message: 'Tạo yêu cầu thanh toán MoMo thất bại.',
@@ -174,22 +196,22 @@ orderData.tong_gia = tong_gia_truoc_giam - gia_tri_giam;
       }
 
       return res.status(200).json({
-        message: 'Đơn hàng được tạo thành công. Vui lòng thanh toán qua MoMo.',
         orderId,
         payUrl: momoRes.data.payUrl,
         momoResponse: momoRes.data
       });
     }
 
-    // 3. Nếu chọn COD
-    if (orderData.phuong_thuc_thanh_toan === 'cod') {
+    // ========================
+    // ✅ XỬ LÝ THANH TOÁN COD
+    // ========================
+    if (orderData.phuong_thuc_thanh_toan == 'cod') {
       return res.status(201).json({
-        message: 'Đơn hàng được tạo thành công. Phương thức thanh toán COD đã được ghi nhận.',
-        orderId
+        orderId: orderId
       });
     }
 
-    // 4. Phương thức không hợp lệ
+    // Phương thức thanh toán không hợp lệ
     return res.status(400).json({ message: 'Phương thức thanh toán không hợp lệ.' });
 
   } catch (err) {
@@ -200,6 +222,10 @@ orderData.tong_gia = tong_gia_truoc_giam - gia_tri_giam;
     });
   }
 };
+
+
+
+
   // 🗑️ Huỷ đơn hàng
   module.exports.cancelOrderByUser = async (req, res) => {
     try {

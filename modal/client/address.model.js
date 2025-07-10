@@ -4,7 +4,7 @@ const axios = require('axios');
 
 exports.getAddresses = async (userId) => {
   const [rows] = await db.execute(
-    'SELECT * FROM dia_chi WHERE id_nguoi_dung = ?',
+    'SELECT * FROM dia_chi WHERE  deleted=0 AND id_nguoi_dung = ?',
     [userId]
   );
   return rows;
@@ -30,7 +30,7 @@ exports.updateAddress = async (id, data) => {
 };
 
 exports.deleteAddress = async (id) => {
-  await db.execute('DELETE FROM dia_chi WHERE id = ?', [id]);
+  await db.execute('UPDATE dia_chi SET deleted=1 Where id= ?', [id]);
 };
 
 exports.setDefaultAddress = async (userId, addressId) => {
