@@ -22,8 +22,8 @@ const findById = async (id) => {
 const create = async (data) => {
   const sql = `
     INSERT INTO nguoi_dung 
-    (id_vai_tro, ten, email, mat_khau, so_dien_thoai, ma_xac_minh, ngay_tao, deleted)
-    VALUES (?, ?, ?, ?, ?, ?, NOW(), 0) -- 👈 Mặc định mở tài khoản
+    (id_vai_tro, ten, email, mat_khau, so_dien_thoai, ma_xac_minh, otp_expires, ngay_tao, deleted)
+    VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 5 MINUTE), NOW(), 0)
   `;
   const [result] = await db.query(sql, [
     data.id_vai_tro,
@@ -35,6 +35,7 @@ const create = async (data) => {
   ]);
   return result;
 };
+
 
 
 // 🔥 Cập nhật tên & số điện thoại
@@ -71,31 +72,47 @@ const updatePassword = async (id, hashedPassword) => {
 const verifyEmail = async (id) => {
   const sql = `
     UPDATE nguoi_dung
-    SET xac_thuc_email = 1, ma_xac_minh = NULL, ngay_cap_nhat = NOW()
+    SET xac_thuc_email = 1, ma_xac_minh = NULL, otp_expires = NULL, ngay_cap_nhat = NOW()
     WHERE id_nguoi_dung = ?
   `;
   await db.query(sql, [id]);
 };
 
+
 // 🔥 Cập nhật OTP
-const updateOtp = async (id, otpCode, otpExpires) => {
+const updateOtp = async (id, otpCode) => {
   const sql = `
     UPDATE nguoi_dung
-    SET ma_xac_minh = ?, otp_expires = ?, ngay_cap_nhat = NOW()
+    SET ma_xac_minh = ?, 
+        otp_expires = DATE_ADD(NOW(), INTERVAL 5 MINUTE), 
+        ngay_cap_nhat = NOW()
     WHERE id_nguoi_dung = ?
   `;
-  await db.query(sql, [otpCode, otpExpires, id]);
+  await db.query(sql, [otpCode, id]);
 };
 
 // 🔥 Xóa OTP sau khi dùng
 const clearOtp = async (id) => {
   const sql = `
     UPDATE nguoi_dung
-    SET ma_xac_minh = NULL, otp_expires = NULL, ngay_cap_nhat = NOW()
+    SET ma_xac_minh = NULL, 
+        otp_expires = NULL, 
+        ngay_cap_nhat = NOW()
     WHERE id_nguoi_dung = ?
   `;
   await db.query(sql, [id]);
 };
+
+const clearExpiredOtp = async () => {
+  const sql = `
+    UPDATE nguoi_dung
+    SET ma_xac_minh = NULL, otp_expires = NULL
+    WHERE otp_expires <= NOW()
+  `;
+  await db.query(sql);
+};
+setInterval(clearExpiredOtp, 60 * 1000); // chạy mỗi phút
+
 
 module.exports = {
   findByEmail,
@@ -106,5 +123,7 @@ module.exports = {
   updatePassword,
   verifyEmail,
   updateOtp,
-  clearOtp
+  clearOtp,
+  clearExpiredOtp
 };
+

@@ -4,6 +4,8 @@ const productModel = require('../../modal/client/product.model');
 const getAllProducts = async (req, res) => {
     try {
         const data = await productModel.getAllProducts();
+
+
         res.json({
             success: true,
             message: 'Lấy danh sách sản phẩm thành công',
@@ -14,6 +16,7 @@ const getAllProducts = async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+
 
 // 🔥 Lấy sản phẩm HOT
 const getHotProducts = async (req, res) => {
@@ -40,16 +43,28 @@ const getProductById = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm' });
         }
 
+        // 🚫 Check trạng thái sản phẩm
+        if (data.trang_thai === 'Đã hủy') {
+            return res.status(200).json({
+                success: true,
+                message: 'Sản phẩm đã hết hàng',
+                data,
+                canOrder: false // 👈 Thêm flag để frontend biết ẩn nút đặt hàng
+            });
+        }
+
         res.json({
             success: true,
             message: 'Lấy chi tiết sản phẩm thành công',
-            data
+            data,
+            canOrder: true // 👈 Cho phép đặt hàng
         });
     } catch (error) {
         console.error('❌ Lỗi khi lấy chi tiết sản phẩm:', error);
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+
 
 // 🛍️ Lấy sản phẩm theo danh mục
 const getProductsByCategory = async (req, res) => {
@@ -106,7 +121,29 @@ const getRelatedProducts = async (req, res) => {
 //     }
 // };
 
+const searchProducts = async (req, res) => {
+    try {
+        const { keyword } = req.query;
 
+        if (!keyword || keyword.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng nhập từ khóa tìm kiếm'
+            });
+        }
+
+        const data = await productModel.searchProducts(keyword);
+
+        res.json({
+            success: true,
+            message: `Tìm kiếm sản phẩm với từ khóa "${keyword}" thành công`,
+            data
+        });
+    } catch (error) {
+        console.error('❌ Lỗi khi tìm kiếm sản phẩm:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
 
 module.exports = {
     getAllProducts,
@@ -114,5 +151,5 @@ module.exports = {
     getProductById,
     getProductsByCategory,
     getRelatedProducts,
-    
+    searchProducts,
 };

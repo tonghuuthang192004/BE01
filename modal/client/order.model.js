@@ -107,28 +107,54 @@ const getOrdersByUserId = async (userId, status) => {
   return rows;
 };
 
-// 📥 Lấy chi tiết danh sách sản phẩm trong đơn hàng của user
+//📥 Lấy chi tiết danh sách sản phẩm trong đơn hàng của user
 const getOrderProductsByUser = async (orderId, userId) => {
   const [items] = await db.query(`
     SELECT 
+      -- 🛒 Thông tin sản phẩm
       ctdh.id_san_pham,
       sp.ten AS productName,
       sp.hinh_anh AS imageUrl,
       sp.gia AS price,
+      sp.trang_thai AS status,  -- 👈 THÊM dòng này để trả trạng thái sản phẩm
       ctdh.so_luong AS quantity,
-      (sp.gia * ctdh.so_luong) AS total
+      (sp.gia * ctdh.so_luong) AS total,
+
+      -- 👤 Thông tin người mua
+      nd.ten AS customerName,
+      nd.email AS customerEmail,
+      nd.so_dien_thoai AS customerPhone,
+
+      -- 📍 Địa chỉ giao hàng
+      dc.dia_chi_day_du AS shippingAddress,
+
+      -- 📦 Thông tin đơn hàng
+      dh.id_don_hang,
+      dh.ngay_tao AS orderDate,
+      dh.trang_thai AS orderStatus,
+      dh.phuong_thuc_thanh_toan AS paymentMethod,
+      dh.trang_thai_thanh_toan AS paymentStatus,
+      dh.tong_gia AS totalPrice,
+      dh.gia_tri_giam AS discountValue,
+      dh.tong_gia_truoc_giam AS totalBeforeDiscount,
+      dh.ghi_chu AS orderNote
     FROM chi_tiet_don_hang ctdh
     INNER JOIN san_pham sp ON ctdh.id_san_pham = sp.id_san_pham
     INNER JOIN don_hang dh ON ctdh.id_don_hang = dh.id_don_hang
+    INNER JOIN nguoi_dung nd ON dh.id_nguoi_dung = nd.id_nguoi_dung
+    INNER JOIN dia_chi dc ON dh.id_dia_chi = dc.id
     WHERE ctdh.id_don_hang = ? 
-      AND dh.id_nguoi_dung = ?
-      AND sp.deleted = 0          
-      AND sp.trang_thai = 1       
-    ORDER BY ctdh.id_san_pham
+      AND dh.id_nguoi_dung = ? 
+      AND sp.deleted = 0
+      AND (sp.trang_thai = 'active' OR sp.trang_thai = 'Đã hủy')
+    ORDER BY ctdh.id_san_pham;
   `, [orderId, userId]);
 
   return items;
-};const getOrderHistoriesByUser = async (filters = {}) => {
+};
+
+
+const getOrderHistoriesByUser = async (filters = {}) => {
   let sql = `
     SELECT SQL_CALC_FOUND_ROWS
       dh.id_don_hang,

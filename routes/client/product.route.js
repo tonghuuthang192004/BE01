@@ -10,6 +10,9 @@ router.get('/', productController.getAllProducts);
 // 🔥 Lấy danh sách sản phẩm HOT
 router.get('/hot', productController.getHotProducts);
 
+router.get('/search', productController.searchProducts);
+
+
 // 📦 Lấy chi tiết sản phẩm theo ID
 router.get('/:id', productController.getProductById);
 

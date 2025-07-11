@@ -6,7 +6,7 @@ const getAllCategories = async () => {
         const sql = `
             SELECT id_danh_muc, ten, tieu_de, hinh_anh
             FROM danh_muc
-            WHERE deleted=0
+            WHERE deleted = 0
         `;
         const [rows] = await db.query(sql);
         return rows;
@@ -20,9 +20,9 @@ const getAllCategories = async () => {
 const getProductsByCategoryId = async (id_danh_muc) => {
     try {
         const sql = `
-            SELECT id_san_pham, ten, gia, mo_ta, hinh_anh, noi_bat
+            SELECT id_san_pham, ten, gia, mo_ta, hinh_anh, noi_bat, trang_thai
             FROM san_pham
-            WHERE id_danh_muc = ? AND trang_thai = 1
+            WHERE id_danh_muc = ? AND deleted = 0 AND trang_thai IN ('active', 'Đã hủy')
         `;
         const [rows] = await db.query(sql, [id_danh_muc]);
         return rows;
