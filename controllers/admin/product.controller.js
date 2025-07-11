@@ -137,37 +137,26 @@ module.exports.getEditProduct = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
-
 module.exports.editProduct = async (req, res) => {
   try {
-    // console.log('Body:', req.body);
-    // console.log('File:', req.file);
     const id_san_pham = req.params.id_san_pham;
     const file = req.file;
-    const {
-      ten,
-      id_danh_muc,
-      gia,
-      mo_ta,
-      trang_thai,
-    } = req.body;
+    const { ten, id_danh_muc, gia, mo_ta, trang_thai, so_luong_kho, noi_bat } = req.body;
 
-    // Lấy sản phẩm hiện tại từ DB (để lấy ảnh cũ)
+    // Lấy sản phẩm hiện tại từ DB để lấy ảnh cũ
     const existingProduct = await product.getAllProductsId(id_san_pham);
 
     if (!existingProduct) {
       return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
     }
 
-    // Nếu có file mới thì lấy tên file mới, còn không thì lấy ảnh cũ từ DB
+    // Nếu có file mới thì lấy tên file mới, nếu không thì lấy ảnh cũ từ DB
     const hinh_anh = file ? file.filename : existingProduct.hinh_anh;
 
-    // Kiểm tra ảnh (bắt buộc phải có ảnh, ảnh cũ hoặc mới)
     if (!hinh_anh) {
       return res.status(400).json({ message: 'Ảnh sản phẩm là bắt buộc' });
     }
 
-    // Tạo object update
     const productUpdate = {
       ten,
       id_danh_muc,
@@ -175,6 +164,8 @@ module.exports.editProduct = async (req, res) => {
       mo_ta,
       trang_thai,
       hinh_anh,
+      so_luong_kho,  // ✅ Đảm bảo so_luong_kho có mặt trong object cập nhật
+      noi_bat       // ✅ Đảm bảo noi_bat có mặt trong object cập nhật
     };
 
     // Cập nhật sản phẩm

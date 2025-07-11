@@ -51,6 +51,7 @@ module.exports.getOrderDetailByUser = async (req, res) => {
 
 module.exports.createOrderAndPay = async (req, res) => {
   const orderData = req.body;
+  console.log(orderData);
 
   try {
     // =======================
@@ -63,10 +64,8 @@ module.exports.createOrderAndPay = async (req, res) => {
 
     // Kiểm tra chi tiết sản phẩm trong giỏ hàng
     for (const sp of orderData.chi_tiet_san_pham) {
-      // Tạo câu truy vấn SQL
-      const query = `SELECT gia FROM san_pham WHERE id_san_pham = ?`;
-
-      // In câu truy vấn SQL và giá trị id_san_pham
+      // Tạo câu truy vấn SQL để lấy giá và số lượng kho
+      const query = `SELECT gia, so_luong_kho FROM san_pham WHERE id_san_pham = ?`;
       console.log('Executing query:', query, 'with id_san_pham:', sp.id_san_pham);
 
       const [rows] = await db.execute(query, [sp.id_san_pham]);
@@ -76,8 +75,18 @@ module.exports.createOrderAndPay = async (req, res) => {
       }
 
       const gia = rows[0].gia;
+      const so_luong_con_lai = rows[0].so_luong_kho;  // Stock quantity column
+
+      if (so_luong_con_lai < sp.so_luong) {
+        return res.status(400).json({ message: `Sản phẩm ID ${sp.id_san_pham} không đủ số lượng trong kho.` });
+      }
+
       sp.gia = gia; // Gán lại để insert vào chi tiết đơn hàng
       tong_gia_truoc_giam += gia * sp.so_luong;
+
+      // Cập nhật số lượng sản phẩm trong kho sau khi đơn hàng được tạo
+      const updateStockQuery = `UPDATE san_pham SET so_luong_kho = so_luong_kho - ? WHERE id_san_pham = ?`;
+      await db.execute(updateStockQuery, [sp.so_luong, sp.id_san_pham]);
     }
 
     // Kiểm tra nếu có mã giảm giá và áp dụng
@@ -155,7 +164,7 @@ module.exports.createOrderAndPay = async (req, res) => {
       const amount = orderData.tong_gia.toString();
       const orderInfo = `Thanh toán đơn hàng #${orderId}`;
       const redirectUrl = 'https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b';
-      var ipnUrl = 'https://a075-2402-800-63ac-8971-7828-7380-b173-e3b2.ngrok-free.app/admin/cod/callback';
+      var ipnUrl = 'https://1c0fae42f2a6.ngrok-free.app/admin/cod/callback';
 
       const requestId = 'REQ_' + Date.now();
       const extraData = '';
@@ -222,7 +231,6 @@ module.exports.createOrderAndPay = async (req, res) => {
     });
   }
 };
-
 
 
 
@@ -442,41 +450,77 @@ module.exports.callback = async (req, res) => {
     }
   };
 
-  // 📥 Lấy lịch sử đơn hàng của user
+//   // 📥 Lấy lịch sử đơn hàng của user
+// module.exports.getOrderHistoriesByUser = async (req, res) => {
+//   try {
+//     // Ensure the user is authenticated and has a valid ID
+//     if (!req.user || !req.user.id) {
+//       console.error('❌ Middleware không gắn user hoặc token sai');
+//       return res.status(401).json({
+//         success: false,
+//         message: 'Chưa đăng nhập hoặc token không hợp lệ'
+//       });
+//     }
+
+//     const userId = req.user.id;
+//     const status = req.query.status;  // Get the status from query params
+
+//     // Fetch order histories from the model
+//     const histories = await orderModel.getOrderHistoriesByUser(userId, status);
+
+//     // If no histories are found, return a message
+//     if (histories.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'Không tìm thấy lịch sử đơn hàng'
+//       });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: 'Danh sách lịch sử đơn hàng',
+//       data: histories
+//     });
+
+//   } catch (err) {
+//     console.error('❌ [getOrderHistoriesByUser] Lỗi server:', err.message);
+//     return res.status(500).json({
+//       success: false,
+//       message: 'Lỗi server khi lấy lịch sử đơn hàng'
+//     });
+//   }
+// };
+
 module.exports.getOrderHistoriesByUser = async (req, res) => {
   try {
-    console.log('📌 [getOrderHistoriesByUser] req.user:', req.user);
-
-    if (!req.user || !req.user.id) {
-      console.error('❌ Middleware không gắn user hoặc token sai');
-      return res.status(401).json({
-        success: false,
-        message: 'Chưa đăng nhập hoặc token không hợp lệ'
-      });
+    // Assuming userID is part of the authenticated user's data (e.g., from JWT)
+    const userID = req.user.id;  // Make sure to pass the user ID from authentication
+    if (!userID) {
+      return res.status(400).json({ error: 'Missing userID in the request' });
     }
 
-    const userId = req.user.id;
+    // Get pagination and filters from query params
+    const page = req.query.page ? parseInt(req.query.page) : 1;
+    const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+    const offset = (page - 1) * limit;
 
-    // 📥 Lấy status từ query params
-    const status = req.query.status;
-    console.log('📥 [getOrderHistoriesByUser] Filter trạng thái:', status);
+    // Filters to pass to the model
+    const filters = {
+      userID,         // Add userID filter
+      status: req.query.status || undefined,
+      search: req.query.search || undefined,
+      deleted: 0,     // assuming deleted = 0 means not deleted
+      limit,
+      offset
+    };
 
-    // Gọi model với userId và status
-    const histories = await orderModel.getOrderHistoriesByUser(userId, status);
+    // Call the model to fetch orders
+    const data = await orderModel.getOrderHistoriesByUser(filters);
 
-    console.log('📦 [getOrderHistoriesByUser] Dữ liệu trả về:', histories);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Danh sách lịch sử đơn hàng',
-      data: histories
-    });
-
-  } catch (err) {
-    console.error('❌ [getOrderHistoriesByUser] Lỗi server:', err.message);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi lấy lịch sử đơn hàng'
-    });
+    // Respond with the data
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching order history:", error);
+    res.status(500).json({ error: 'Server error while fetching order history' });
   }
 };

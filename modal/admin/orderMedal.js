@@ -210,7 +210,7 @@ const orderDetail = async(orderId)=>{
 }
 
 
-const updateOrderStatus = async (orderId, newStatus, newPaymentStatus) => {
+ const updateOrderStatus = async (orderId, newStatus, newPaymentStatus) => {
   try {
     // Bước 1: Lấy thông tin đơn hàng hiện tại
     const [rows] = await db.query(
@@ -221,7 +221,7 @@ const updateOrderStatus = async (orderId, newStatus, newPaymentStatus) => {
     if (rows.length === 0) throw new Error('Không tìm thấy đơn hàng');
 
     const order = rows[0];
-    console.log('Order hiện tại:', order);
+    // console.log('Order hiện tại:', order);
 
     // Bước 2: Cập nhật trạng thái đơn hàng nếu có sự thay đổi
     let sql = 'UPDATE don_hang SET trang_thai = ?';
@@ -249,35 +249,50 @@ const updateOrderStatus = async (orderId, newStatus, newPaymentStatus) => {
     if (newStatus === 'Đã giao') {
       console.log('Trạng thái đơn hàng đã chuyển thành "Đã giao"');
 
+      // Ghi thông tin thanh toán vào bảng thanh_toan
+      const paymentData = {
+        id_don_hang: orderId,
+        so_tien: order.tong_gia,
+        phuong_thuc: order.phuong_thuc_thanh_toan,
+        trang_thai: 'Đã thanh toán', // Nếu trạng thái thanh toán chưa được cập nhật
+        ngay_thanh_toan: new Date() // Ngày thanh toán là ngày hiện tại
+      };
+
+      await db.query(`
+        INSERT INTO thanh_toan (id_don_hang, so_tien, phuong_thuc, trang_thai, ngay_thanh_toan)
+        VALUES (?, ?, ?, ?, ?)
+      `, [paymentData.id_don_hang, paymentData.so_tien, paymentData.phuong_thuc, paymentData.trang_thai, paymentData.ngay_thanh_toan]);
+
+      console.log('Thông tin thanh toán đã được ghi vào bảng thanh_toan.');
+
       // Kiểm tra thanh toán
       const [checkPayment] = await db.query('SELECT * FROM thanh_toan WHERE id_don_hang = ?', [orderId]);
-      console.log('Kiểm tra thanh toán:', checkPayment);
 
       if (checkPayment.length > 0) {
-  // Kiểm tra xem trạng thái thanh toán có phải là 'Chờ thanh toán' không
-  if (checkPayment[0].trang_thai === 'Chờ thanh toán') {
-    // Cập nhật trạng thái thanh toán thành "Đã thanh toán"
-    await db.query(`
-      UPDATE thanh_toan 
-      SET trang_thai = 'Đã thanh toán', ngay_thanh_toan = NOW() 
-      WHERE id_don_hang = ?
-    `, [orderId]);
+        // Kiểm tra xem trạng thái thanh toán có phải là 'Chờ thanh toán' không
+        if (checkPayment[0].trang_thai === 'Chờ thanh toán') {
+          // Cập nhật trạng thái thanh toán thành "Đã thanh toán"
+          await db.query(`
+            UPDATE thanh_toan 
+            SET trang_thai = 'Đã thanh toán', ngay_thanh_toan = NOW() 
+            WHERE id_don_hang = ?
+          `, [orderId]);
 
-    console.log('Cập nhật trạng thái thanh toán thành "Đã thanh toán".');
-  } else {
-    console.log('Trạng thái thanh toán đã là "Đã thanh toán" hoặc trạng thái khác.');
-  }
+          console.log('Cập nhật trạng thái thanh toán thành "Đã thanh toán".');
+        } else {
+          console.log('Trạng thái thanh toán đã là "Đã thanh toán" hoặc trạng thái khác.');
+        }
 
-  // Cập nhật lại trạng thái thanh toán trong bảng don_hang
-  if (order.trang_thai_thanh_toan !== 'Đã thanh toán') {
-    await db.query(`
-      UPDATE don_hang SET trang_thai_thanh_toan = 'Đã thanh toán' WHERE id_don_hang = ?
-    `, [orderId]);
-    console.log('Cập nhật trạng thái thanh toán trong bảng don_hang thành "Đã thanh toán".');
-  }
-} else {
-  console.log('Không có thanh toán để cập nhật.');
-}
+        // Cập nhật lại trạng thái thanh toán trong bảng don_hang
+        if (order.trang_thai_thanh_toan !== 'Đã thanh toán') {
+          await db.query(`
+            UPDATE don_hang SET trang_thai_thanh_toan = 'Đã thanh toán' WHERE id_don_hang = ?
+          `, [orderId]);
+          console.log('Cập nhật trạng thái thanh toán trong bảng don_hang thành "Đã thanh toán".');
+        }
+      } else {
+        console.log('Không có thanh toán để cập nhật.');
+      }
     } 
 
     // Bước 4: Xử lý thanh toán khi trạng thái là "Đã hủy"

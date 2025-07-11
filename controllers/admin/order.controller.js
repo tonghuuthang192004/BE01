@@ -51,7 +51,7 @@ module.exports.updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { trang_thai } = req.body;
 
-    const validStatuses = ['Đang xử lý', 'Xác nhận', 'Chờ thanh toán', 'Đã giao', 'Đã hủy'];
+    const validStatuses = ['Đang xử lý', 'Xác nhận', 'Đang chuẩn bị hàng', 'Đang giao', 'Đã giao', 'Đã hủy'];
     if (!validStatuses.includes(trang_thai)) {
       return res.status(400).json({ success: false, message: 'Trạng thái không hợp lệ' });
     }
@@ -255,7 +255,7 @@ console.log('Order created successfully with orderId:', orderId);  // Log orderI
 
 module.exports.callback = async (req, res) => {
   console.log("callback:::");
-  // res.send('ok');
+  res.send('ok');
     console.log('--- CALLBACK MO MO ĐƯỢC GỌI ---', req.method, req.path);
 
   const {

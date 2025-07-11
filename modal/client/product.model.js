@@ -3,10 +3,11 @@ const db = require('../../config/database');
 
 // 🟢 Lấy tất cả sản phẩm
 const getAllProducts = async () => {
+  const active='active'
     const sql = `
         SELECT id_san_pham, id_danh_muc, ten, gia, mo_ta, hinh_anh, noi_bat,so_luong_kho
         FROM san_pham
-        WHERE deleted = 0 AND trang_thai = 1
+        WHERE deleted = 0 AND trang_thai=${active};
     `;
     const [rows] = await db.query(sql);
     return rows;
@@ -32,6 +33,7 @@ const getHotProducts = async () => {
 
 // 📦 Lấy chi tiết sản phẩm theo ID
 const getProductById = async (id) => {
+  const active='active'
   const sql = `
     SELECT 
       sp.id_san_pham, sp.ten, sp.gia, sp.mo_ta, sp.hinh_anh, sp.noi_bat,so_luong_kho,
@@ -39,7 +41,7 @@ const getProductById = async (id) => {
     FROM san_pham sp
     LEFT JOIN danh_gia_san_pham dg 
       ON sp.id_san_pham = dg.id_san_pham 
-      AND dg.deleted = 0 AND dg.trang_thai = 1
+      AND dg.deleted = 0 AND dg.trang_thai =${active}
     WHERE sp.id_san_pham = ? AND sp.deleted = 0 AND sp.trang_thai = 1
     GROUP BY sp.id_san_pham
   `;
@@ -50,10 +52,11 @@ const getProductById = async (id) => {
 
 // 🛍️ Lấy sản phẩm theo danh mục
 const getProductsByCategoryId = async (id_danh_muc) => {
+  const active='active'
     const sql = `
         SELECT id_san_pham, ten, gia, mo_ta, hinh_anh, noi_bat,so_luong_kho
         FROM san_pham
-        WHERE id_danh_muc = ? AND deleted = 0 AND trang_thai = 1
+        WHERE id_danh_muc = ? AND deleted = 0 AND trang_thai=${active}
     `;
     const [rows] = await db.query(sql, [id_danh_muc]);
     return rows;
@@ -61,10 +64,11 @@ const getProductsByCategoryId = async (id_danh_muc) => {
 
 // ✅ Lấy sản phẩm liên quan (cùng danh mục, khác sản phẩm hiện tại)
 const getRelatedProducts = async (categoryId, productId) => {
+  const active='active'
     const sql = `
         SELECT id_san_pham, ten, gia, mo_ta, hinh_anh, noi_bat
         FROM san_pham
-        WHERE id_danh_muc = ? AND id_san_pham != ? AND deleted = 0 AND trang_thai = 1
+        WHERE id_danh_muc = ? AND id_san_pham != ? AND deleted = 0 AND trang_thai = ${active}
         LIMIT 10
     `;
     const [rows] = await db.query(sql, [categoryId, productId]);

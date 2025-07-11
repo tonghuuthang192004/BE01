@@ -128,32 +128,66 @@ const getOrderProductsByUser = async (orderId, userId) => {
   `, [orderId, userId]);
 
   return items;
-};
-
-
-
-const getOrderHistoriesByUser = async (userId, status) => {
+};const getOrderHistoriesByUser = async (filters = {}) => {
   let sql = `
-    SELECT lsdh.id_don_hang, lsdh.thoi_gian, lsdh.trang_thai, lsdh.mo_ta,
-           dh.tong_gia, dh.phuong_thuc_thanh_toan
-    FROM lich_su_don_hang lsdh
-    JOIN don_hang dh ON lsdh.id_don_hang = dh.id_don_hang
-    WHERE dh.id_nguoi_dung = ?
+    SELECT SQL_CALC_FOUND_ROWS
+      dh.id_don_hang,
+      dh.id_nguoi_dung,
+      nd.ten AS ten_nguoi_dung,
+      dh.ngay_tao,
+      dh.trang_thai,
+      dh.phuong_thuc_thanh_toan,
+      dh.trang_thai_thanh_toan,
+      dh.tong_gia,
+      dh.ghi_chu,
+      dc.dia_chi_day_du,
+      nd.so_dien_thoai
+    FROM don_hang dh
+    JOIN nguoi_dung nd ON dh.id_nguoi_dung = nd.id_nguoi_dung
+    LEFT JOIN dia_chi dc ON dh.id_dia_chi = dc.id
+    WHERE 1
   `;
-  const params = [userId];
 
-  // 👉 Chỉ lọc nếu status khác 'Tất cả' và không null
-  if (status && status !== 'Tất cả') {
-    sql += ' AND lsdh.trang_thai = ?';
-    params.push(status);
+  const params = [];
+
+  // Add the user ID filter if provided
+  if (filters.userID) {
+    sql += ` AND dh.id_nguoi_dung = ?`;
+    params.push(filters.userID);
   }
 
-  sql += ' ORDER BY lsdh.thoi_gian DESC';
+  // Add the status filter if provided
+  if (filters.status) {
+    sql += ` AND dh.trang_thai = ?`;
+    params.push(filters.status);
+  }
 
+  // Add the search filter if provided (name or phone number)
+  if (filters.search !== undefined) {
+    const keyword = `%${filters.search.toLowerCase()}%`;
+    sql += ' AND (LOWER(nd.ten) LIKE ? OR nd.so_dien_thoai LIKE ?)';
+    params.push(keyword, filters.search); // 1 for name, 1 for phone number
+  }
+
+  sql += ` ORDER BY dh.ngay_tao DESC`;
+
+  // Add the pagination filters if provided
+  if (filters.limit !== undefined && filters.offset !== undefined) {
+    sql += ` LIMIT ? OFFSET ?`;
+    params.push(filters.limit, filters.offset);
+  }
+
+  console.log('SQL:', sql);  // Debugging: Print SQL Query
+  console.log('Params:', params);  // Debugging: Print parameters
+
+  // Execute the query
   const [rows] = await db.query(sql, params);
-  return rows;
-};
 
+  // Get the total number of records
+  const [[{ total }]] = await db.query('SELECT FOUND_ROWS() AS total');
+
+  return { orders: rows, total };
+};
 
 
 const cancelOrderByUser = async (orderId, userId) => {

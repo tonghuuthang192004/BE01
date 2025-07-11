@@ -154,7 +154,7 @@ module.exports.callback = async (req, res) => {
         `UPDATE don_hang
         SET trang_thai = ?, trang_thai_thanh_toan = ?, phuong_thuc_thanh_toan = ?
         WHERE id_don_hang = ?`,
-        ['Đã giao', 'Đã thanh toán', 'MoMo', idDonHang]
+        ['Đang cập nhật', 'Đã thanh toán', 'MoMo', idDonHang]
       );
       console.log('📦 Đã cập nhật đơn hàng');
 

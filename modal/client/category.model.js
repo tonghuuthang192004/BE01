@@ -6,7 +6,7 @@ const getAllCategories = async () => {
         const sql = `
             SELECT id_danh_muc, ten, tieu_de, hinh_anh
             FROM danh_muc
-            WHERE trang_thai = 1
+            WHERE deleted=0
         `;
         const [rows] = await db.query(sql);
         return rows;

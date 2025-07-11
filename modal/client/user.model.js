@@ -23,7 +23,7 @@ const create = async (data) => {
   const sql = `
     INSERT INTO nguoi_dung 
     (id_vai_tro, ten, email, mat_khau, so_dien_thoai, ma_xac_minh, ngay_tao, deleted)
-    VALUES (?, ?, ?, ?, ?, ?, NOW(), 1) -- 👈 Mặc định mở tài khoản
+    VALUES (?, ?, ?, ?, ?, ?, NOW(), 0) -- 👈 Mặc định mở tài khoản
   `;
   const [result] = await db.query(sql, [
     data.id_vai_tro,
