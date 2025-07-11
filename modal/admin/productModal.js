@@ -9,7 +9,6 @@ const getAllProducts = async (filters = {}) => {
     san_pham.gia,
     san_pham.trang_thai,
     san_pham.noi_bat,
-    san_pham.so_luong_kho,
     
     danh_muc.ten AS ten_danh_muc
   FROM san_pham
@@ -95,7 +94,7 @@ const deleteAll = async (ids) => {
 
 const createProduct = async (product) => {
   try {
-    const query = `INSERT INTO san_pham(id_san_pham,id_danh_muc,ten,gia,mo_ta,trang_thai,ngay_cap_nhat,ngay_tao,hinh_anh,deleted,noi_bat,so_luong_kho) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`;
+    const query = `INSERT INTO san_pham(id_san_pham,id_danh_muc,ten,gia,mo_ta,trang_thai,ngay_cap_nhat,ngay_tao,hinh_anh,deleted,noi_bat) VALUES(?,?,?,?,?,?,?,?,?,?,?)`;
     const values = [
       product.id_san_pham,
       product.id_danh_muc,
@@ -108,7 +107,7 @@ const createProduct = async (product) => {
       product.hinh_anh,
       product.deleted,
       product.noi_bat,
-      product.so_luong_kho
+      
     ];
     const res = await db.query(query, values);
     return res;
@@ -126,7 +125,6 @@ const updateProduct = async (product, id_san_pham) => {
     trang_thai,
     hinh_anh,
     noi_bat,
-    so_luong_kho
   } = product;
 
   const ngay_cap_nhat = new Date().toISOString().split('T')[0];
@@ -140,12 +138,12 @@ const updateProduct = async (product, id_san_pham) => {
         trang_thai = ?, 
         hinh_anh = ?, 
         ngay_cap_nhat = ?, 
-        so_luong_kho = ?, 
+       
         noi_bat = ?
     WHERE id_san_pham = ?
   `;
 
-  const values = [id_danh_muc, ten, gia, mo_ta, trang_thai, hinh_anh, ngay_cap_nhat, so_luong_kho, noi_bat, id_san_pham];
+  const values = [id_danh_muc, ten, gia, mo_ta, trang_thai, hinh_anh, ngay_cap_nhat, noi_bat, id_san_pham];
   const [res] = await db.query(query, values);
   return res;
 };

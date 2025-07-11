@@ -3,7 +3,7 @@ const router = express.Router();
 const productController = require('../../controllers/client/product.controller');
 
 // 🟢 Lấy tất cả sản phẩm
-router.get('/stock/:id_san_pham', productController.stock);
+// router.get('/stock/:id_san_pham', productController.stock);
 
 router.get('/', productController.getAllProducts);
 

@@ -5,7 +5,7 @@ const db = require('../../config/database');
 const getAllProducts = async () => {
   const active='active'
     const sql = `
-        SELECT id_san_pham, id_danh_muc, ten, gia, mo_ta, hinh_anh, noi_bat,so_luong_kho
+        SELECT id_san_pham, id_danh_muc, ten, gia, mo_ta, hinh_anh, noi_bat
         FROM san_pham
         WHERE deleted = 0 AND trang_thai=${active};
     `;
@@ -17,7 +17,7 @@ const getAllProducts = async () => {
 const getHotProducts = async () => {
     const sql = `
         SELECT 
-            sp.id_san_pham, sp.id_danh_muc, sp.ten, sp.gia, sp.mo_ta, sp.hinh_anh,so_luong_kho,
+            sp.id_san_pham, sp.id_danh_muc, sp.ten, sp.gia, sp.mo_ta, sp.hinh_anh
             IFNULL(AVG(dg.diem_so), 0) AS diem_so
         FROM san_pham sp
         LEFT JOIN danh_gia_san_pham dg 
@@ -35,15 +35,9 @@ const getHotProducts = async () => {
 const getProductById = async (id) => {
   const active='active'
   const sql = `
-    SELECT 
-      sp.id_san_pham, sp.ten, sp.gia, sp.mo_ta, sp.hinh_anh, sp.noi_bat,so_luong_kho,
-      IFNULL(AVG(dg.diem_so), 0) AS diem_so
-    FROM san_pham sp
-    LEFT JOIN danh_gia_san_pham dg 
-      ON sp.id_san_pham = dg.id_san_pham 
-      AND dg.deleted = 0 AND dg.trang_thai =${active}
-    WHERE sp.id_san_pham = ? AND sp.deleted = 0 AND sp.trang_thai = 1
-    GROUP BY sp.id_san_pham
+    SELECT id_san_pham, id_danh_muc, ten, gia, mo_ta, hinh_anh, noi_bat
+        FROM san_pham
+        WHERE deleted = 0 AND trang_thai=${active};
   `;
   const [rows] = await db.query(sql, [id]);
   return rows[0]; // trả về 1 sản phẩm duy nhất
@@ -54,7 +48,7 @@ const getProductById = async (id) => {
 const getProductsByCategoryId = async (id_danh_muc) => {
   const active='active'
     const sql = `
-        SELECT id_san_pham, ten, gia, mo_ta, hinh_anh, noi_bat,so_luong_kho
+        SELECT id_san_pham, ten, gia, mo_ta, hinh_anh, noi_bat
         FROM san_pham
         WHERE id_danh_muc = ? AND deleted = 0 AND trang_thai=${active}
     `;
@@ -75,15 +69,14 @@ const getRelatedProducts = async (categoryId, productId) => {
     return rows;
 };
 
-const stock= async(id_san_pham)=>
-{
-      const [stock] = await db.query('SELECT so_luong_kho FROM san_pham WHERE id_san_pham = ?', [id_san_pham]);
-       return stock;
+// const stock= async(id_san_pham)=>
+// {
+//       const [stock] = await db.query('SELECT so_luong_kho FROM san_pham WHERE id_san_pham = ?', [id_san_pham]);
+//        return stock;
 
-}
+// }
 
 module.exports = {
-  stock,
     getAllProducts,
     getHotProducts,
     getProductById,

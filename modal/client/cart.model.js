@@ -17,8 +17,8 @@ const getCartItem = async (userId) => {
       gio_hang.so_luong, 
       san_pham.ten, 
       san_pham.gia, 
-      san_pham.hinh_anh,
-      san_pham.so_luong_kho
+      san_pham.hinh_anh
+     
     FROM gio_hang
     JOIN san_pham ON gio_hang.id_san_pham = san_pham.id_san_pham
     WHERE gio_hang.id_nguoi_dung = ?`;

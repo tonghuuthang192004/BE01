@@ -56,22 +56,10 @@ module.exports.addItemToCart = async (req, res) => {
       return res.status(400).json({ success: false, message: "Thiếu id_san_pham hoặc so_luong" });
     }
 
-    // Kiểm tra số lượng kho của sản phẩm
-    const [stock] = await db.query('SELECT so_luong_kho FROM san_pham WHERE id_san_pham = ?', [id_san_pham]);
-
-    if (stock.length === 0) {
-      return res.status(404).json({ success: false, message: "Sản phẩm không tồn tại trong kho" });
-    }
-
-    if (stock[0].so_luong_kho < so_luong) {
-      
-      return res.status(400).json({ success: false, message: "Sản phẩm không đủ số lượng trong kho" });
-    }
-
     // Kiểm tra và tạo giỏ hàng nếu chưa tồn tại
     const cart = await checkOrCreateCart(userId);
 
-    // Thêm hoặc cập nhật sản phẩm vào giỏ hàng
+    // Thêm hoặc cập nhật sản phẩm vào giỏ hàng mà không cần kiểm tra kho
     const result = await cartModel.addItemToCart(userId, id_san_pham, so_luong);
 
     let message;
@@ -83,7 +71,6 @@ module.exports.addItemToCart = async (req, res) => {
       message = "Đã khôi phục và thêm lại sản phẩm vào giỏ";
     }
 
-    // Trả về phản hồi cho client
     res.status(result.type === 'insert' ? 201 : 200).json({
       success: true,
       message,
@@ -96,6 +83,7 @@ module.exports.addItemToCart = async (req, res) => {
   }
 };
 
+
 module.exports.updateItemQuantity = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -106,16 +94,10 @@ module.exports.updateItemQuantity = async (req, res) => {
       return res.status(400).json({ success: false, message: "Thiếu id_san_pham hoặc so_luong" });
     }
 
-    // Kiểm tra số lượng kho
-    const [stock] = await db.query('SELECT so_luong_kho FROM san_pham WHERE id_san_pham = ?', [id_san_pham]);
-    if (stock.length === 0 || stock[0].so_luong_kho < so_luong) {
-      return res.status(400).json({ success: false, message: "Sản phẩm không đủ số lượng trong kho" });
-    }
-
     // Kiểm tra giỏ hàng của người dùng
     const cart = await checkOrCreateCart(userId);
 
-    // Cập nhật sản phẩm trong giỏ
+    // Cập nhật sản phẩm trong giỏ hàng mà không cần kiểm tra số lượng kho
     const result = await cartModel.updateCartItemQuantity(userId, id_san_pham, so_luong);
 
     res.status(200).json({

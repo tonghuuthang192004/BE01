@@ -48,7 +48,6 @@ module.exports.getOrderDetailByUser = async (req, res) => {
     });
   }
 };
-
 module.exports.createOrderAndPay = async (req, res) => {
   const orderData = req.body;
   console.log(orderData);
@@ -64,8 +63,8 @@ module.exports.createOrderAndPay = async (req, res) => {
 
     // Kiểm tra chi tiết sản phẩm trong giỏ hàng
     for (const sp of orderData.chi_tiet_san_pham) {
-      // Tạo câu truy vấn SQL để lấy giá và số lượng kho
-      const query = `SELECT gia, so_luong_kho FROM san_pham WHERE id_san_pham = ?`;
+      // Tạo câu truy vấn SQL để lấy giá
+      const query = `SELECT gia FROM san_pham WHERE id_san_pham = ?`;
       console.log('Executing query:', query, 'with id_san_pham:', sp.id_san_pham);
 
       const [rows] = await db.execute(query, [sp.id_san_pham]);
@@ -75,18 +74,10 @@ module.exports.createOrderAndPay = async (req, res) => {
       }
 
       const gia = rows[0].gia;
-      const so_luong_con_lai = rows[0].so_luong_kho;  // Stock quantity column
-
-      if (so_luong_con_lai < sp.so_luong) {
-        return res.status(400).json({ message: `Sản phẩm ID ${sp.id_san_pham} không đủ số lượng trong kho.` });
-      }
 
       sp.gia = gia; // Gán lại để insert vào chi tiết đơn hàng
       tong_gia_truoc_giam += gia * sp.so_luong;
 
-      // Cập nhật số lượng sản phẩm trong kho sau khi đơn hàng được tạo
-      const updateStockQuery = `UPDATE san_pham SET so_luong_kho = so_luong_kho - ? WHERE id_san_pham = ?`;
-      await db.execute(updateStockQuery, [sp.so_luong, sp.id_san_pham]);
     }
 
     // Kiểm tra nếu có mã giảm giá và áp dụng
@@ -231,7 +222,6 @@ module.exports.createOrderAndPay = async (req, res) => {
     });
   }
 };
-
 
 
   // 🗑️ Huỷ đơn hàng

@@ -87,24 +87,24 @@ const getRelatedProducts = async (req, res) => {
         });
     }
 };
-const stock  = async (req, res) => {
-    try {
-        const { id_san_pham } = req.params;
-        const data = await productModel.stock(id_san_pham);
+// const stock  = async (req, res) => {
+//     try {
+//         const { id_san_pham } = req.params;
+//         const data = await productModel.stock(id_san_pham);
 
-        res.json({
-            success: true,
-            message: 'Lấy sản phẩm liên quan thành công',
-            data
-        });
-    } catch (error) {
-        console.error('❌ Lỗi lấy sản phẩm liên quan:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error'
-        });
-    }
-};
+//         res.json({
+//             success: true,
+//             message: 'Lấy sản phẩm liên quan thành công',
+//             data
+//         });
+//     } catch (error) {
+//         console.error('❌ Lỗi lấy sản phẩm liên quan:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Internal server error'
+//         });
+//     }
+// };
 
 
 
@@ -114,5 +114,5 @@ module.exports = {
     getProductById,
     getProductsByCategory,
     getRelatedProducts,
-    stock
+    
 };
