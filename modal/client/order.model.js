@@ -217,21 +217,10 @@ const getOrderHistoriesByUser = async (filters = {}) => {
 
 
 const cancelOrderByUser = async (orderId, userId) => {
-  const [result] = await db.query(`
-    UPDATE don_hang
-    SET trang_thai = 'Đã hủy',
-        trang_thai_thanh_toan = IF(trang_thai_thanh_toan = 'Đã thanh toán', 'Đã hoàn tiền', trang_thai_thanh_toan)
-    WHERE id_don_hang = ? AND id_nguoi_dung = ? AND trang_thai = 'Chưa xác nhận'
-  `, [orderId, userId]);
+  const [reslut] = await db.query('UPDATE don_hang SET deleted=1 where id_don_hang=?', [orderId,userId])
+  return reslut
 
-  if (result.affectedRows === 0) {
-    throw new Error('Không thể huỷ đơn hàng. Đơn đã xử lý hoặc không thuộc về bạn.');
-  }
-
-  await db.query(`
-    INSERT INTO lich_su_don_hang (id_don_hang, thoi_gian, trang_thai, mo_ta)
-    VALUES (?, NOW(), 'Đã hủy', 'Người dùng huỷ đơn hàng')
-  `, [orderId]);
+  
 };
 const addReview = async (productId, userId, rating, comment) => {
   if (!rating || rating < 1 || rating > 5) {

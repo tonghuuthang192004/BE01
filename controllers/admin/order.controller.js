@@ -8,15 +8,11 @@ const moment = require('moment');
 
 const db=require('../../config/database');
 
-
 module.exports.getOrder = async (req, res) => {
   try {
-     const page = req.query.page ? parseInt(req.query.page) : undefined;
-    const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
-    const offset = page && limit ? (page - 1) * limit : undefined;
-    // const page = parseInt(req.query.page) || 1;
-    // const limit = parseInt(req.query.limit) || 10;
-    // const offset = (page - 1) * limit;
+    const page = req.query.page ? parseInt(req.query.page) : 1; // Default to 1 if page is not provided
+    const limit = req.query.limit ? parseInt(req.query.limit) : 10; // Default to 10 if limit is not provided
+    const offset = (page - 1) * limit;
 
     const filters = {
       status: req.query.status || undefined,
@@ -26,6 +22,8 @@ module.exports.getOrder = async (req, res) => {
       offset
     };
 
+    console.log('Filters:', filters);  // Useful for debugging
+
     const data = await orderModel.getOrder(filters);
     res.json(data);
   } catch (error) {
@@ -33,6 +31,7 @@ module.exports.getOrder = async (req, res) => {
     res.status(500).json({ error: 'Lỗi server khi lấy đơn hàng' });
   }
 };
+
 module.exports.detailOrder=async (req,res)=>{
       try {
         const { id} = req.params;
@@ -45,6 +44,22 @@ module.exports.detailOrder=async (req,res)=>{
         console.error('Error fetching product by ID:', error);
         res.status(500).json({ error: 'Internal server error.' });
       }
+}
+module.exports.deleteId= async (req,res)=>{
+
+  const id=req.params.id;
+  try {
+    const result = await orderModel.deleteItem(id);
+
+    if (result.affectedRows > 0) {
+      res.json({ success: true, message: 'Đã xoá đơn hàng thành công' });
+    } else {
+      res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm để xoá' });
+    }
+  } catch (error) {
+    console.error('Lỗi khi xoá sản phẩm:', error);
+    res.status(500).json({ success: false, message: 'Lỗi server khi xoá sản phẩm' });
+  }
 }
 module.exports.updateOrderStatus = async (req, res) => {
   try {

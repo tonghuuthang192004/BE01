@@ -66,8 +66,7 @@ const createOrder = async (orderData) => {
     console.error('❌ Lỗi tạo đơn hàng:', err.message);
     throw err;
   }
-};
-const getOrder = async (filters = {}) => {
+};const getOrder = async (filters = {}) => {
   let sql = `
     SELECT SQL_CALC_FOUND_ROWS
       dh.id_don_hang,
@@ -84,20 +83,19 @@ const getOrder = async (filters = {}) => {
     FROM don_hang dh
     JOIN nguoi_dung nd ON dh.id_nguoi_dung = nd.id_nguoi_dung
     LEFT JOIN dia_chi dc ON dh.id_dia_chi = dc.id
-    WHERE 1
+    WHERE dh.deleted = 0
   `;
 
   const params = [];
 
-  if (filters.status) {
+if (filters.status) {
     sql += ` AND dh.trang_thai = ?`;
     params.push(filters.status);
-  }
-
- if (filters.search !== undefined) {
-   const keyword = `%${filters.search.toLowerCase()}%`;
-  sql += ' AND (LOWER(ten) LIKE ? OR so_dien_thoai LIKE ?)';
-  params.push(keyword, filters.search); // 1 cho ten, 1 cho sdt
+}
+  if (filters.search !== undefined) {
+    const keyword = `%${filters.search.toLowerCase()}%`;
+    sql += ' AND (LOWER(nd.ten) LIKE ? OR LOWER(nd.so_dien_thoai) LIKE ?)';
+    params.push(keyword, keyword); // Apply for both 'ten' and 'so_dien_thoai'
   }
 
   sql += ` ORDER BY dh.ngay_tao DESC`;
@@ -340,6 +338,7 @@ const orderDetail = async(orderId)=>{
 
 
 
+
 // const updatePaymentStatus = async (orderId, newPaymentStatus) => {
 //   try {
 //     // 1. Kiểm tra đơn hàng có tồn tại không
@@ -378,19 +377,17 @@ const orderDetail = async(orderId)=>{
 //     throw error;
 //   }
 // };
-const deleteOrder = async (orderId) => {
-  const [result] = await db.query(
-    'DELETE FROM don_hang WHERE id_don_hang = ?',
-    [orderId]
-  );
-  return result;
-};
+const deleteItem = async (id) => {
+  const [reslut] = await db.query('UPDATE don_hang SET deleted=1 where id_don_hang=?', [id])
+  return reslut
+
+}
 module.exports={
     createOrder,
     getOrder,
     orderDetail,
     updateOrderStatus,
-    deleteOrder
+    deleteItem
     
  
 
