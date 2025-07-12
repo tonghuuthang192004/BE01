@@ -224,23 +224,26 @@ module.exports.createOrderAndPay = async (req, res) => {
 };
 
 
-  // 🗑️ Huỷ đơn hàng
-  module.exports.cancelOrderByUser = async (req, res) => {
-    try {
-      const userId = req.user.id;
-      const orderId = req.params.id;
+  // 🗑️ Huỷ đơn hàng// 🗑️ Huỷ đơn hàng
+module.exports.cancelOrderByUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const orderId = req.params.id;
 
-      const success = await orderModel.cancelOrderByUser(orderId, userId);
-      if (!success) {
-        return res.status(400).json({ success: false, message: 'Không thể huỷ đơn hàng này.' });
-      }
+    const result = await orderModel.cancelOrderByUser(orderId, userId);
 
-      res.json({ success: true, message: 'Huỷ đơn hàng thành công.' });
-    } catch (err) {
-      console.error('❌ Lỗi cancelOrderByUser:', err);
-      res.status(500).json({ success: false, message: 'Lỗi server khi huỷ đơn hàng.' });
+    // Kiểm tra xem có đơn hàng nào được update không
+    if (!result || result.affectedRows === 0) {
+      return res.status(400).json({ success: false, message: 'Không thể huỷ đơn hàng này hoặc đơn hàng không tồn tại.' });
     }
-  };
+
+    res.json({ success: true, message: 'Huỷ đơn hàng thành công.' });
+  } catch (err) {
+    console.error('Lỗi cancelOrderByUser:', err);
+    res.status(500).json({ success: false, message: 'Lỗi server khi huỷ đơn hàng.' });
+  }
+};
+
 
   // 🔄 Mua lại đơn hàng
   module.exports.reorder = async (req, res) => {

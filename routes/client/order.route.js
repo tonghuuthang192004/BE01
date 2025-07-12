@@ -10,7 +10,7 @@ router.get('/products/:id/reviews', authenticate, orderController.getReviews);
 router.get('/:id', authenticate, orderController.getOrderDetailByUser);
 
 router.post('/create', authenticate, orderController.createOrderAndPay);
-router.delete('/:id/cancel', authenticate, orderController.cancelOrderByUser);
+router.patch('/:id/cancel', authenticate, orderController.cancelOrderByUser);
 router.post('/:id/reorder', authenticate, orderController.reorder);
 router.post('/:id/review', authenticate, orderController.reviewProduct);
 

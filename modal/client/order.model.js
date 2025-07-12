@@ -1,4 +1,3 @@
-
 const db = require('../../config/database');
 
 // 📦 Tạo đơn hàng mới (COD / MoMo)
@@ -21,7 +20,7 @@ const createOrder = async (orderData) => {
         id_giam_gia,
         ghi_chu,
         ngay_tao
-      ) VALUES (?, ?, ?, 'Chưa xác nhận', 'Chưa thanh toán', ?, ?, ?, ?, ?, NOW())
+      ) VALUES (?, ?, ?, 'Đang xử lý', 'Chưa thanh toán', ?, ?, ?, ?, ?, NOW())
     `;
 
     const insertValues = [
@@ -52,8 +51,7 @@ const createOrder = async (orderData) => {
 
 
     }
-
-    
+  
     // 3. Insert chi tiết đơn hàng
     for (const item of orderData.chi_tiet_san_pham) {
       await db.query(
@@ -214,14 +212,34 @@ const getOrderHistoriesByUser = async (filters = {}) => {
 
   return { orders: rows, total };
 };
-
-
 const cancelOrderByUser = async (orderId, userId) => {
   const [reslut] = await db.query('UPDATE don_hang SET deleted=1 where id_don_hang=?', [orderId,userId])
   return reslut
 
   
 };
+
+// const cancelOrderByUser = async (orderId, userId) => {
+//   // Chỉ cập nhật nếu trạng thái đơn hàng là 'Đang xử lý'
+//   const [result] = await db.query(
+//     `UPDATE don_hang
+//      SET trang_thai = 'Đã hủy'
+//      WHERE id_don_hang = ? AND id_nguoi_dung = ? AND trang_thai = 'Đang xử lý'`,
+//     [orderId, userId]
+//   );
+
+//   // Nếu có đơn hàng được cập nhật thì ghi log
+//   if (result.affectedRows > 0) {
+//     await db.query(
+//       `INSERT INTO lich_su_don_hang (id_don_hang,trang_thai, thoi_gian, mo_ta)
+//        VALUES (?,  'Đã hủy',NOW(), 'Người dùng đã hủy đơn hàng')`,
+//       [orderId]
+//     );
+//   }
+
+//   return result;
+// };
+
 const addReview = async (productId, userId, rating, comment) => {
   if (!rating || rating < 1 || rating > 5) {
     throw new Error('Điểm số phải từ 1 đến 5');
