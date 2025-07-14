@@ -15,7 +15,7 @@ const GetAllDisCountManger = async (filters = {}) => {
     }
 
     if (filters.search !== undefined) {
-        sql += ` AND LOWER(ma_giam_gia) LIKE ? `;
+        sql += ` AND LOWER(ten) LIKE ? `;
         params.push(`%${filters.search.toLowerCase()}%`);
     }
 
@@ -136,6 +136,12 @@ const EditDiscountManger = async (discountManger, id_giam_gia) => {
     return result;
 };
 
+const detaiDiscoutManger= async(id_giam_gia)=>{
+    const sql =`SELECT * FROM giam_gia Where id_giam_gia = ?`;
+    const [rel]= await db.query(sql,[id_giam_gia]);
+    return rel[0];
+}
+
 module.exports = {
     GetAllDisCountManger,
     GetDisCountMangerId,
@@ -144,5 +150,6 @@ module.exports = {
     deleteAll,
     createDiscountManger,
     EditDiscountManger,
-    updateProductsStatusMulti
+    updateProductsStatusMulti,
+    detaiDiscoutManger
 };

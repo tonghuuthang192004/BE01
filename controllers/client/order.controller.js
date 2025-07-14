@@ -53,11 +53,9 @@ module.exports.createOrderAndPay = async (req, res) => {
   console.log(orderData);
 
   try {
-    // =======================
-    // ✅ TÍNH TỔNG GIÁ + GIẢM
-    // =======================
+    
     let tong_gia_truoc_giam = 0;
-    let gia_tri_giam = 0; // Mặc định giảm giá là 0
+    let gia_tri_giam = 0; 
 
     console.log('orderData:', orderData);
 
@@ -77,7 +75,6 @@ module.exports.createOrderAndPay = async (req, res) => {
 
       sp.gia = gia; // Gán lại để insert vào chi tiết đơn hàng
       tong_gia_truoc_giam += gia * sp.so_luong;
-
     }
 
     // Kiểm tra nếu có mã giảm giá và áp dụng
@@ -154,8 +151,8 @@ module.exports.createOrderAndPay = async (req, res) => {
       const requestType = "payWithMethod";
       const amount = orderData.tong_gia.toString();
       const orderInfo = `Thanh toán đơn hàng #${orderId}`;
-      const redirectUrl = 'https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b';
-      var ipnUrl = 'https://1c0fae42f2a6.ngrok-free.app/admin/cod/callback';
+      const redirectUrl = 'https://thanhtoanthanhcong-two.vercel.app/';
+      var ipnUrl = 'https://833fe7c91f80.ngrok-free.app/admin/cod/callback';
 
       const requestId = 'REQ_' + Date.now();
       const extraData = '';
@@ -187,6 +184,7 @@ module.exports.createOrderAndPay = async (req, res) => {
         headers: { 'Content-Type': 'application/json' }
       });
 
+      // Kiểm tra nếu MoMo trả về kết quả thành công
       if (momoRes.data.resultCode !== 0) {
         await orderModel.deleteOrder(orderId);
         return res.status(400).json({
@@ -195,9 +193,12 @@ module.exports.createOrderAndPay = async (req, res) => {
         });
       }
 
+      // Trả về các dữ liệu bao gồm deeplink
       return res.status(200).json({
         orderId,
         payUrl: momoRes.data.payUrl,
+        qrCodeUrl: momoRes.data.qrCodeUrl,  // Thêm mã QR nếu cần
+        deeplink: momoRes.data.deeplink,    // Trả về deeplink cho Flutter
         momoResponse: momoRes.data
       });
     }

@@ -165,3 +165,25 @@ module.exports.EditDisCountManger = async (req, res) => {
     });
   }
 };
+
+
+module.exports.detailDiscountManger = async (req, res) => {
+  try {
+    const { id_ma_giam } = req.params;
+    
+    if (!id_ma_giam) {
+      return res.status(400).json({ error: 'DisCountManger ID is required.' });
+    }
+
+    const data = await disCountMangeModel.detaiDiscoutManger(id_ma_giam);
+
+    if (!data) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+
+    res.json({ success: true, product: data });
+  } catch (error) {
+    console.error('Error fetching product by ID:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+};

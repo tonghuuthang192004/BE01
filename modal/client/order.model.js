@@ -309,7 +309,7 @@ const getReviewsByProductId = async (productId) => {
 const deleteOrder = async (orderId) => {
   try {
     const [result] = await db.query(
-      `DELETE FROM don_hang WHERE id_don_hang = ?`,
+      `Update don_hang set deleted=1  WHERE id_don_hang = ?`,
       [orderId]
     );
     return result.affectedRows > 0;

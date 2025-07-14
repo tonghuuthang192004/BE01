@@ -8,6 +8,7 @@ const userRoute=require('./user.route');
 const disCountMange=require('./discountManger.route')
 const codroute=require('./cod.route')
 const reportroute =require('./report.route')
+const reviewRoute = require('./review.route');
 module.exports = (app) => {
   const PathAdmin = systemConfig.prefixAdmin;
   app.use(PathAdmin + '/dashboard', dashboardRoutes);
@@ -19,6 +20,8 @@ module.exports = (app) => {
   app.use(PathAdmin+'/disCountManger',disCountMange)
   app.use(PathAdmin + '/cod',codroute)
   app.use(PathAdmin + '/report',reportroute)
+  app.use(PathAdmin + '/review',reviewRoute)
+
 
 
   //  app.listen(3000, () => {

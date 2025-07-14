@@ -21,4 +21,6 @@ router.post(
 //   validate.editProduct,               // sau đó mới validate
   disCountManage.EditDisCountManger       // cuối cùng là xử lý logic
 );
+router.get('/disCountMangerDetail/:id_ma_giam',disCountManage.detailDiscountManger);
+
 module.exports = router;
